@@ -27,4 +27,5 @@ This project is a full-featured food ordering web application built with Django 
 3. pip install -r requirements.txt
 4. python manage.py migrate
 5. python manage.py createsuperuser
-6. you can go to admin using http://127.0.0.1:8000/admin and login with superuser to access the database
+6. python manage.py runserver to run the server
+7. you can go to admin using http://127.0.0.1:8000/admin and login with superuser to access the database
