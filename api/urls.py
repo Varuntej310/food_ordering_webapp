@@ -6,8 +6,7 @@ from .views import (
     CartView, CartItemCreateUpdate, CartItemIncrementDecrement, CartItemDelete
 )
 from .views import (
-    UserList, LoginView, SignupView, LogoutView,
-    PasswordResetRequestView
+    UserList, LoginView, SignupView, LogoutView
 )
 
 urlpatterns = [
