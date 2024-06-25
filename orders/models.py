@@ -4,6 +4,9 @@ from home.models import Menu
 from django.db.models import Sum
 
 from datetime import date, time
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # Create your models here.
 class Orders(models.Model):

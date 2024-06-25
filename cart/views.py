@@ -10,6 +10,9 @@ from django import forms
 from home.models import Menu
 from .models import Cart, CartItem
 from orders.models import Orders, Address
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # Create your views here.
 @login_required

@@ -4,6 +4,10 @@ from home.models import Menu, Category
 from orders.models import Orders, Address
 from cart.models import Cart, CartItem
 from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+from phonenumber_field.modelfields import PhoneNumberField
+
+User = get_user_model()
 
 # Home 
 
@@ -11,12 +15,14 @@ class MenuSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
     class Meta:
         model = Menu
-        fields = ['id', 'item', 'description', 'price', 'category', 'veg_or_nonveg', 'image', 'is_available']
+        fields = ['id', 'item', 'description', 'price', 'category', 'veg_nonveg_egg', 'image', 'avg_time_taken', 'is_available']
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['name', 'slug']
+        fields = ['name', 'slug', 'image']
+
 
 # Orders 
 
@@ -38,13 +44,6 @@ class AddressSerializer(serializers.ModelSerializer):
         fields = ['id', 'address']
 
 
-# user
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username']  
-
 # cart
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -55,7 +54,6 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'menu_item', 'quantity']
          
         
-
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True, source='cart_items')  
 
@@ -64,24 +62,33 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'items']
         read_only_fields = ['user']
 
+
 # authentication
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']  # Fields you want to expose
+        fields = ['id', 'phone_number', 'name', 'hostel', 'email']
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
+    phone_number = PhoneNumberField()
+    password = serializers.CharField(required=True)
+
 
 class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)  # Don't include password in response
-
+    password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
-
+        fields = ['phone_number', 'email', 'password', 'password2', 'name', 'hostel']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+    
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        return attrs
+    
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
+        del validated_data['password2']
+        return User.objects.create_user(**validated_data)

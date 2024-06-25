@@ -23,6 +23,9 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # Home API views
 
@@ -30,9 +33,11 @@ class MenuList(generics.ListAPIView):
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
 
+
 class CategoryList(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
 
 class MenuSearch(generics.ListAPIView):
     serializer_class = MenuSerializer
@@ -49,6 +54,7 @@ class MenuSearch(generics.ListAPIView):
         else:
             return Menu.objects.all()
 
+
 # Orders API views
 
 class UserOrderList(generics.ListAPIView):
@@ -58,10 +64,12 @@ class UserOrderList(generics.ListAPIView):
     def get_queryset(self):
         return Orders.objects.filter(user=self.request.user)
 
+
 class CreateOrder(generics.CreateAPIView):
     queryset = Orders.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 class AddressList(generics.ListAPIView):
     serializer_class = AddressSerializer
@@ -69,6 +77,7 @@ class AddressList(generics.ListAPIView):
 
     def get_queryset(self):
         return Address.objects.filter(user=self.request.user)
+
 
 class CreateAddress(generics.CreateAPIView):
     queryset = Address.objects.all()
@@ -85,7 +94,6 @@ class UserList(generics.ListAPIView):
 
 
 # cart API Views
-
 
 class CartView(generics.ListAPIView):
     serializer_class = CartSerializer
@@ -155,37 +163,29 @@ class CartItemDelete(generics.DestroyAPIView):
 
 # authentication API views
 
-# User View (for testing/admin purposes)
-class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-# Login View
-class LoginView(APIView):
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = authenticate(username=serializer.data['username'], password=serializer.data['password'])
-            if user is not None:
-                login(request, user)
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({'token': token.key})
-            else:
-                return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Sign Up View
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
 
-# Sign Out View
+
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = authenticate(**serializer.validated_data)
+
+        if user:
+            login(request, user)
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key})
+        else:
+            return Response({'error': 'Wrong Credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
 class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-# Password Reset Request
