@@ -28,7 +28,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 
 from datetime import datetime, timedelta
-from django.db.models import Count
+from django.db.models import Count, Sum
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -270,16 +271,16 @@ class GetProfileView(generics.RetrieveAPIView):
 
 class BestsellerListView(generics.ListAPIView):
     serializer_class = MenuSerializer
-    permission_classes = [permissions.AllowAny]  # Allow access to everyone (no authentication needed)
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        one_week_ago = datetime.now() - timedelta(days=7)
+        one_week_ago = timezone.now() - timedelta(days=7)
         bestseller_ids = (
-            Orders.objects
-            .filter(date__gte=one_week_ago)  # Filter orders from the last week
-            .values('items')  # Get unique menu item IDs (through the ManyToMany relationship)
-            .annotate(item_count=Count('items'))  # Count occurrences of each menu item
-            .order_by('-item_count')  # Order by count (highest first)
-            .values_list('items', flat=True)[:5]  # Get top 5 IDs
+            OrderItem.objects
+            .filter(order__date__gte=one_week_ago)
+            .values('menu_item')
+            .annotate(total_quantity=Sum('quantity'))
+            .order_by('total_quantity')
+            .values_list('menu_item', flat=True)[:5]
         )
         return Menu.objects.filter(id__in=bestseller_ids)
