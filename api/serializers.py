@@ -5,7 +5,8 @@ from orders.models import Orders, Address
 from cart.models import Cart, CartItem
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
-from phonenumber_field.modelfields import PhoneNumberField
+from phonenumber_field.serializerfields import PhoneNumberField
+from django.contrib.auth.hashers import make_password
 
 User = get_user_model()
 
@@ -90,5 +91,6 @@ class SignupSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data['password'])
         del validated_data['password2']
         return User.objects.create_user(**validated_data)

@@ -10,13 +10,18 @@ from cart.models import Cart, CartItem
 
 
 # Create your views here.
-@method_decorator(login_required, name='dispatch')
 class Index(View):
     def get(self, request, *args, **kwargs):
         menu_items = Menu.objects.all()
-        cart = Cart.objects.filter(user=request.user).first()
-        cart_items = CartItem.objects.filter(cart=cart) if cart else []
-
+        print(menu_items)
+        
+        # Check for authentication
+        if request.user.is_authenticated:
+            cart, _ = Cart.objects.get_or_create(user=request.user)
+            cart_items = CartItem.objects.filter(cart=cart)
+        else:
+            cart_items = []  # Empty list if not authenticated
+        
         context = {
             'menu_items': menu_items,
             'cart_items': cart_items,

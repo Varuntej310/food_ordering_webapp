@@ -95,7 +95,7 @@ body {
 <div class="header">
     <div style="display: flex; flex-direction: column;">
         {% if user.is_authenticated %}
-        <p>Logged in as {{ user.username }}</p>
+        <p>Logged in as {{ user.phone_number }}</p>
         <div class="user-info">
             <form action="{% url 'logout' %}" method="post">
                 {% csrf_token %}
