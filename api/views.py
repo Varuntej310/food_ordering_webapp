@@ -132,12 +132,37 @@ class UserList(generics.ListAPIView):
 
 # cart API Views
 
-class CartView(generics.ListAPIView):
+class CartView(generics.RetrieveUpdateAPIView):
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return Cart.objects.filter(user=self.request.user)  
+    def get_object(self):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        return cart
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        cart = serializer.save()
+        cart.cart_items.all().delete()  # Clear existing items
+
+        for item_data in self.request.data.get('cart_items', []):
+            menu_item = get_object_or_404(Menu, id=item_data['menu_item_id'])
+            CartItem.objects.create(
+                cart=cart,
+                menu_item=menu_item,
+                quantity=item_data['quantity']
+            )
 
 
 class CartItemCreate(generics.CreateAPIView):

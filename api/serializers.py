@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from phonenumber_field.serializerfields import PhoneNumberField
 from django.contrib.auth.hashers import make_password
 from django.db.models import F
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -59,44 +60,35 @@ class AddressSerializer(serializers.ModelSerializer):
 # cart
 
 class CartItemSerializer(serializers.ModelSerializer):
-    menu_item_id = serializers.IntegerField()
+    menu_item_id = serializers.IntegerField()  # Keep this for input
+    menu_item = MenuSerializer(read_only=True)  # For output
 
     class Meta:
         model = CartItem
-        fields = ['menu_item_id', 'quantity']
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        cart, _ = Cart.objects.get_or_create(user=user)
-        menu_item_id = validated_data.pop('menu_item_id')
-        menu_item = Menu.objects.get(id=menu_item_id)
-        quantity = validated_data.get('quantity', 1)
-        
-        cart_items = CartItem.objects.filter(cart=cart, menu_item=menu_item)
-        
-        if cart_items.exists():
-            cart_item = cart_items.first()
-            cart_item.quantity = F('quantity') + quantity
-            cart_item.save()
-            # Refresh from db to get the updated quantity
-            cart_item.refresh_from_db()
-        else:
-            cart_item = CartItem.objects.create(
-                cart=cart,
-                menu_item=menu_item,
-                quantity=quantity
-            )
-
-        return cart_item
+        fields = ['menu_item_id', 'quantity', 'menu_item']
          
         
 class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(many=True, read_only=True, source='cart_items')  
-
+    cart_items = CartItemSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'items']
+        fields = ['id', 'user', 'cart_items']
         read_only_fields = ['user']
+
+    def update(self, instance, validated_data):
+        cart_items_data = self.context['request'].data.get('cart_items', [])
+        instance.cart_items.all().delete()
+        
+        for item_data in cart_items_data:
+            menu_item = get_object_or_404(Menu, id=item_data['menu_item_id'])
+            CartItem.objects.create(
+                cart=instance,
+                menu_item=menu_item,
+                quantity=item_data['quantity']
+            )
+        
+        return instance
 
 
 # authentication
