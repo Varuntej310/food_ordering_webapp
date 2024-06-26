@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from rest_framework.authtoken.models import Token  # For token-based authentication
+from rest_framework.authentication import TokenAuthentication
 from .serializers import UserSerializer, LoginSerializer, SignupSerializer
 from django.contrib.auth import login, logout
 from django.core.mail import send_mail
@@ -188,6 +189,7 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (TokenAuthentication) 
 
     def post(self, request):
         logout(request)
