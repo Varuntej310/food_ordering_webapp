@@ -25,6 +25,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 
+from datetime import datetime, timedelta
+from django.db.models import Count
+
 User = get_user_model()
 
 # Home API views
@@ -189,3 +192,33 @@ class LogoutView(APIView):
     def post(self, request):
         logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+ 
+# profile
+
+class GetProfileView(generics.RetrieveAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = UserSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+    
+
+# bestsellers
+
+class BestsellerListView(generics.ListAPIView):
+    serializer_class = MenuSerializer
+    permission_classes = [permissions.AllowAny]  # Allow access to everyone (no authentication needed)
+
+    def get_queryset(self):
+        one_week_ago = datetime.now() - timedelta(days=7)
+        bestseller_ids = (
+            Orders.objects
+            .filter(date__gte=one_week_ago)  # Filter orders from the last week
+            .values('items')  # Get unique menu item IDs (through the ManyToMany relationship)
+            .annotate(item_count=Count('items'))  # Count occurrences of each menu item
+            .order_by('-item_count')  # Order by count (highest first)
+            .values_list('items', flat=True)[:5]  # Get top 5 IDs
+        )
+        return Menu.objects.filter(id__in=bestseller_ids)
