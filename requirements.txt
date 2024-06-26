@@ -1,10 +1,14 @@
 asgiref==3.7.2
+cffi==1.16.0
+cryptography==42.0.8
 Django==5.0.3
 django-cors-headers==4.3.1
 django-phonenumber-field==8.0.0
+django-rest-knox==4.2.0
 djangorestframework==3.15.1
 phonenumbers==8.13.39
 phonenumberslite==8.13.39
 pillow==10.2.0
+pycparser==2.22
 sqlparse==0.4.4
 tzdata==2024.1
