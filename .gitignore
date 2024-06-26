@@ -20,3 +20,5 @@ eggs/
 
 # PyCharm specific
 .idea/
+.venv
+.DS_Store
