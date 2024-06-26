@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'phonenumber_field',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -118,6 +119,13 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'api.backends.PhoneNumberBackend', 
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [  
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
