@@ -5,7 +5,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from home.models import Menu, Category
-from orders.models import Orders, Address
+from orders.models import Orders, OrderItem, Address
 from django.contrib.auth.models import User
 from cart.models import Cart, CartItem
 from .serializers import (
@@ -25,6 +25,7 @@ from django.utils.crypto import get_random_string
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 
 from datetime import datetime, timedelta
 from django.db.models import Count
@@ -34,16 +35,22 @@ User = get_user_model()
 # Home API views
 
 class MenuList(generics.ListAPIView):
+    authentication_classes = [] 
+    permission_classes = [permissions.AllowAny]
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
 
 
 class CategoryList(generics.ListAPIView):
+    authentication_classes = [] 
+    permission_classes = [permissions.AllowAny]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class MenuSearch(generics.ListAPIView):
+    authentication_classes = [] 
+    permission_classes = [permissions.AllowAny]
     serializer_class = MenuSerializer
 
     def get_queryset(self):
@@ -53,7 +60,7 @@ class MenuSearch(generics.ListAPIView):
                 Q(item__icontains=query) |
                 Q(description__icontains=query) |
                 Q(category__name__icontains=query) |
-                Q(veg_or_nonveg__icontains=query)
+                Q(veg_nonveg_egg__icontains=query) 
             ).distinct()
         else:
             return Menu.objects.all()
@@ -69,10 +76,33 @@ class UserOrderList(generics.ListAPIView):
         return Orders.objects.filter(user=self.request.user)
 
 
-class CreateOrder(generics.CreateAPIView):
-    queryset = Orders.objects.all()
+class Checkout(generics.CreateAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        cart = Cart.objects.get(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        if not cart_items.exists():
+            return Response({"detail": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        order = serializer.save(user=request.user)
+
+        for cart_item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                menu_item=cart_item.menu_item,
+                quantity=cart_item.quantity
+            )
+
+        cart_items.delete()  # Clear the cart after creating the order
+
+        order_data = self.get_serializer(order).data
+        return Response(order_data, status=status.HTTP_201_CREATED)
 
 
 class AddressList(generics.ListAPIView):
@@ -87,6 +117,9 @@ class CreateAddress(generics.CreateAPIView):
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 # User API View
@@ -107,30 +140,15 @@ class CartView(generics.ListAPIView):
         return Cart.objects.filter(user=self.request.user)  
 
 
-class CartItemCreateUpdate(generics.CreateAPIView):
+class CartItemCreate(generics.CreateAPIView):
     serializer_class = CartItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        cart, created = Cart.objects.get_or_create(user=self.request.user)
-        menu_item = serializer.validated_data['menu_item']
-        
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, menu_item=menu_item)
-        
-        if not created:
-            cart_item.quantity += 1
-            cart_item.save()
-        else:
-            serializer.save(cart=cart)
-
-        return cart_item
-
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        cart_item = self.perform_create(serializer)
-        return Response(self.get_serializer(cart_item).data, status=status.HTTP_200_OK if not cart_item else status.HTTP_201_CREATED)
-    
+        cart_item = serializer.save()
+        return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
 
 
 class CartItemIncrementDecrement(APIView):
@@ -170,26 +188,42 @@ class CartItemDelete(generics.DestroyAPIView):
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
+    authentication_classes = [] 
+    permission_classes = [permissions.AllowAny]
 
 
-class LoginView(APIView):
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+from django.contrib.auth.hashers import check_password
+
+class LoginView(generics.GenericAPIView):
+    authentication_classes = [] 
+    permission_classes = [permissions.AllowAny]
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = authenticate(**serializer.validated_data)
+        try:
+            user = User.objects.get(phone_number=serializer.validated_data['phone_number'])
+        except User.DoesNotExist:
+            return Response({'error': 'Wrong Credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user:
+        if check_password(serializer.validated_data['password'], user.password):
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key})
+            return Response({
+                "user": UserSerializer(user, context=self.get_serializer_context()).data,
+                "token": token.key
+            })
         else:
             return Response({'error': 'Wrong Credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+
         
 
 class LogoutView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    authentication_classes = (TokenAuthentication) 
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = (TokenAuthentication,) 
 
     def post(self, request):
         logout(request)
