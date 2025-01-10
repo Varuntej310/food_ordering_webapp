@@ -60,12 +60,13 @@ class AddressSerializer(serializers.ModelSerializer):
 # cart
 
 class CartItemSerializer(serializers.ModelSerializer):
-    menu_item_id = serializers.IntegerField()  # Keep this for input
+    # menu_item_id = serializers.IntegerField()  # Keep this for input
     menu_item = MenuSerializer(read_only=True)  # For output
 
     class Meta:
         model = CartItem
-        fields = ['menu_item_id', 'quantity', 'menu_item']
+        fields = ['id', 'quantity', 'menu_item']
+        read_only_fields = ['id']
          
         
 class CartSerializer(serializers.ModelSerializer):
