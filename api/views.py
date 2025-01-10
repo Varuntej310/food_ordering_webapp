@@ -173,7 +173,8 @@ class CartItemCreate(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        cart_item = serializer.save()
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_item = serializer.save(cart=cart)
         return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
 
 
@@ -188,15 +189,14 @@ class CartItemIncrementDecrement(APIView):
 
         if action == 'increment':
             cart_item.quantity += 1
-            cart_item.save()
         elif action == 'decrement':
             if cart_item.quantity > 1:
                 cart_item.quantity -= 1
-                cart_item.save()
             else:
                 cart_item.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-
+            
+        cart_item.save()
         return Response(CartItemSerializer(cart_item).data, status=status.HTTP_200_OK)
 
 
@@ -243,7 +243,6 @@ class LoginView(generics.GenericAPIView):
             })
         else:
             return Response({'error': 'Wrong Credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
 
         
 

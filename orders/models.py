@@ -22,7 +22,7 @@ class Orders(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     mode_of_eating = models.CharField(max_length=100, choices=EAT_MODES)
-    date = models.DateField(default=timezone.now)
+    date = models.DateTimeField(default=timezone.now)
     time = models.TimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     address = models.ForeignKey('Address', on_delete=models.SET_NULL, null=True, blank=True)
