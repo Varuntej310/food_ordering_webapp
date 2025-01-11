@@ -3,7 +3,7 @@ from .views import (
     MenuList, CategoryList, MenuSearch,
     UserOrderList, Checkout,
     AddressList, CreateAddress, UserList,
-    CartView, CartItemCreate, CartItemIncrementDecrement, CartItemDelete
+    CartView, CartItemCreate, CartItemIncrementDecrement, CartItemDelete, BulkAddToCartView
 )
 from .views import (
     UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView
@@ -28,5 +28,6 @@ urlpatterns = [
     path('logout/', LogoutView.as_view()),
     path('profile/', GetProfileView.as_view(), name='get-profile'),
     path('bestsellers/', BestsellerListView.as_view(), name='bestsellers'),
+    path('cart/bulk-add/', BulkAddToCartView.as_view(), name='bulk-add-to-cart'),
 ]
 

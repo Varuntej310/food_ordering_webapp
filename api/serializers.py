@@ -121,3 +121,18 @@ class SignupSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         del validated_data['password2']
         return User.objects.create_user(**validated_data)
+    
+
+class BulkCartItemSerializer(serializers.Serializer):
+    menu_item_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+
+    def validate_menu_item_id(self, value):
+        if not Menu.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Menu item does not exist.")
+        return value
+
+    def create(self, validated_data):
+        cart = self.context['cart']
+        menu_item = Menu.objects.get(id=validated_data['menu_item_id'])
+        return CartItem.objects.create(cart=cart, menu_item=menu_item, quantity=validated_data['quantity'])
