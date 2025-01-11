@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from cart.models import Cart, CartItem
 from .serializers import (
     UserSerializer, MenuSerializer, CategorySerializer, 
-    OrderSerializer, AddressSerializer, CartSerializer, CartItemSerializer
+    OrderSerializer, AddressSerializer, CartSerializer, CartItemSerializer, BulkCartItemSerializer
 )
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -283,3 +283,15 @@ class BestsellerListView(generics.ListAPIView):
             .values_list('menu_item', flat=True)[:5]
         )
         return Menu.objects.filter(id__in=bestseller_ids)
+    
+
+class BulkAddToCartView(generics.GenericAPIView):
+    serializer_class = BulkCartItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(data=request.data, many=True, context={'cart': cart})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Items added to cart successfully."}, status=status.HTTP_201_CREATED)
