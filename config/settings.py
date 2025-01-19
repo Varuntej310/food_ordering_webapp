@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 
     # 3rd party apps
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
     'phonenumber_field',
     'rest_framework.authtoken',
@@ -124,12 +126,16 @@ AUTHENTICATION_BACKENDS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (  
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAdminUser',
     ),
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=5)
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

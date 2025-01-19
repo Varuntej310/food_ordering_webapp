@@ -1,35 +1,29 @@
-from django.shortcuts import render
-
 # Create your views here.
+from datetime import timedelta
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login, logout
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.db.models import Sum
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import generics, permissions, status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token  # For token-based authentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from cart.models import Cart, CartItem
 from home.models import Menu, Category
 from orders.models import Orders, OrderItem, Address
-from django.contrib.auth.models import User
-from cart.models import Cart, CartItem
 from .serializers import (
-    UserSerializer, MenuSerializer, CategorySerializer, 
+    MenuSerializer, CategorySerializer,
     OrderSerializer, AddressSerializer, CartSerializer, CartItemSerializer, BulkCartItemSerializer
 )
-from django.db.models import Q
-from django.shortcuts import get_object_or_404
-
-from rest_framework.authtoken.models import Token  # For token-based authentication
-from rest_framework.authentication import TokenAuthentication
 from .serializers import UserSerializer, LoginSerializer, SignupSerializer
-from django.contrib.auth import login, logout
-from django.core.mail import send_mail
-from django.conf import settings 
-from django.utils.crypto import get_random_string
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth import authenticate
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-
-from datetime import datetime, timedelta
-from django.db.models import Count, Sum
-from django.utils import timezone
+from oauth2client import client
+from rest_framework_simplejwt.tokens import AccessToken
 
 User = get_user_model()
 
@@ -295,3 +289,27 @@ class BulkAddToCartView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Items added to cart successfully."}, status=status.HTTP_201_CREATED)
+    
+
+def get_id_token(code):
+    credentials = client.credentials_from_clientsecrets_and_code('client_secret.json', ['email', 'profile'], code)
+    print(credentials)
+    return credentials.id_token
+
+def authenticate_or_create_user(user_email):
+    try:
+        user = User.objects.get(email=user_email)
+    except User.DoesNotExist:
+        user = User.objects.create_user(email=user_email)
+    return user 
+
+class LoginWithGoogle(APIView):
+    def post(self, request):
+        if 'code' in request.data.keys():
+            code = request.data['credential']
+            id_token = get_id_token(code)
+            user_email = id_token['email']
+            user = authenticate_or_create_user(user_email)
+            token = AccessToken.for_user(user)
+            return Response({'token': str(token), 'email': user_email}) 
+        return Response('ok')

@@ -6,6 +6,7 @@ from django.db.models import Sum
 from datetime import date, time
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from phonenumber_field.modelfields import PhoneNumberField
 
 User = get_user_model()
 
@@ -46,6 +47,7 @@ class OrderItem(models.Model):
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses')
     address = models.TextField()
+    phone_number = PhoneNumberField(null=True, blank=True, default=None)
 
     def __str__(self):
         return f"{self.address}"
