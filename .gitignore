@@ -22,3 +22,4 @@ eggs/
 .idea/
 .venv
 .DS_Store
+client_secret.json
