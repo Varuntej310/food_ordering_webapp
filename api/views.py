@@ -305,7 +305,7 @@ def authenticate_or_create_user(user_email):
 
 class LoginWithGoogle(APIView):
     def post(self, request):
-        if 'code' in request.data.keys():
+        if 'credential' in request.data.keys():
             code = request.data['credential']
             id_token = get_id_token(code)
             user_email = id_token['email']
