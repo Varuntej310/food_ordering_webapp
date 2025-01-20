@@ -305,7 +305,7 @@ class LoginWithGoogle(APIView):
                               status=status.HTTP_400_BAD_REQUEST)
 
             # Your Google OAuth2 client ID
-            CLIENT_ID = os.environ.client_id
+            CLIENT_ID = os.environ.get('client_id')
             
             # Verify the token
             id_info = id_token.verify_oauth2_token(
