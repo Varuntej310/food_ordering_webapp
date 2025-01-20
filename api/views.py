@@ -24,6 +24,7 @@ from .serializers import (
 )
 from .serializers import UserSerializer, LoginSerializer, SignupSerializer
 from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -353,12 +354,10 @@ class LoginWithGoogle(APIView):
 
 class LogoutWithGoogle(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         try:
-            # Revoke the user's token
-            request.auth.delete()
-            
             # Perform Django logout
             logout(request)
             
