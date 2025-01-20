@@ -25,6 +25,9 @@ from .serializers import UserSerializer, LoginSerializer, SignupSerializer
 from oauth2client import client
 from rest_framework_simplejwt.tokens import AccessToken
 
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
 User = get_user_model()
 
 # Home API views
@@ -291,25 +294,58 @@ class BulkAddToCartView(generics.GenericAPIView):
         return Response({"detail": "Items added to cart successfully."}, status=status.HTTP_201_CREATED)
     
 
-def get_id_token(code):
-    credentials = client.credentials_from_clientsecrets_and_code('client_secret.json', ['email', 'profile'], code)
-    print(credentials)
-    return credentials.id_token
-
-def authenticate_or_create_user(user_email):
-    try:
-        user = User.objects.get(email=user_email)
-    except User.DoesNotExist:
-        user = User.objects.create_user(email=user_email)
-    return user 
-
 class LoginWithGoogle(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
-        if 'credential' in request.data.keys():
-            code = request.data['credential']
-            id_token = get_id_token(code)
-            user_email = id_token['email']
-            user = authenticate_or_create_user(user_email)
+        try:
+            if 'credential' not in request.data:
+                return Response({'error': 'No credential provided'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+
+            # Your Google OAuth2 client ID
+            CLIENT_ID = 'your-client-id.apps.googleusercontent.com'
+            
+            # Verify the token
+            id_info = id_token.verify_oauth2_token(
+                request.data['credential'], 
+                requests.Request(), 
+                CLIENT_ID
+            )
+
+            # Get user email from verified token
+            email = id_info['email']
+            
+            # Check if email is verified by Google
+            if not id_info.get('email_verified'):
+                return Response({'error': 'Email not verified by Google'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+
+            # Get or create user
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                user = User.objects.create_user(
+                    email=email,
+                    name=id_info.get('name', ''),
+                    # Set a random password since they're using Google login
+                    password=User.objects.make_random_password()
+                )
+
+            # Generate token
             token = AccessToken.for_user(user)
-            return Response({'token': str(token), 'email': user_email}) 
-        return Response('ok')
+            
+            return Response({
+                'token': str(token),
+                'email': email,
+                'name': user.name
+            })
+
+        except ValueError:
+            # Invalid token
+            return Response({'error': 'Invalid token'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, 
+                          status=status.HTTP_400_BAD_REQUEST)

@@ -95,7 +95,7 @@ class CartSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'phone_number', 'name', 'hostel', 'email']
+        fields = ['id', 'email', 'name', 'hostel']
 
 class LoginSerializer(serializers.Serializer):
     phone_number = PhoneNumberField()
