@@ -22,7 +22,6 @@ from .serializers import (
     OrderSerializer, AddressSerializer, CartSerializer, CartItemSerializer, BulkCartItemSerializer
 )
 from .serializers import UserSerializer, LoginSerializer, SignupSerializer
-from oauth2client import client
 from rest_framework_simplejwt.tokens import AccessToken
 
 from google.oauth2 import id_token
