@@ -23,3 +23,4 @@ eggs/
 .venv
 .DS_Store
 client_secret.json
+*.env

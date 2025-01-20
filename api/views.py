@@ -1,5 +1,6 @@
 # Create your views here.
 from datetime import timedelta
+import os
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login, logout
@@ -304,7 +305,7 @@ class LoginWithGoogle(APIView):
                               status=status.HTTP_400_BAD_REQUEST)
 
             # Your Google OAuth2 client ID
-            CLIENT_ID = 'your-client-id.apps.googleusercontent.com'
+            CLIENT_ID = os.environ.client_id
             
             # Verify the token
             id_info = id_token.verify_oauth2_token(
@@ -343,7 +344,7 @@ class LoginWithGoogle(APIView):
 
         except ValueError:
             # Invalid token
-            return Response({'error': 'Invalid token'}, 
+            return Response({'error': 'Invalid client_id'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, 
