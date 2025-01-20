@@ -349,3 +349,24 @@ class LoginWithGoogle(APIView):
         except Exception as e:
             return Response({'error': str(e)}, 
                           status=status.HTTP_400_BAD_REQUEST)
+        
+
+class LogoutWithGoogle(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Revoke the user's token
+            request.auth.delete()
+            
+            # Perform Django logout
+            logout(request)
+            
+            return Response({
+                "message": "Successfully logged out"
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)

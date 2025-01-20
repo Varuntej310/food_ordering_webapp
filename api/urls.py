@@ -6,7 +6,7 @@ from .views import (
     CartView, CartItemCreate, CartItemIncrementDecrement, CartItemDelete, BulkAddToCartView
 )
 from .views import (
-    UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView, LoginWithGoogle
+    UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView, LoginWithGoogle, LogoutWithGoogle
 )
 
 urlpatterns = [
@@ -25,6 +25,7 @@ urlpatterns = [
     path('users/', UserList.as_view()),
     path('login/', LoginView.as_view()),
     path('google-login/', LoginWithGoogle.as_view()),
+    path('google-logout/', LogoutWithGoogle.as_view()),
     path('signup/', SignupView.as_view()),
     path('logout/', LogoutView.as_view()),
     path('profile/', GetProfileView.as_view(), name='get-profile'),
