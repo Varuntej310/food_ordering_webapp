@@ -352,20 +352,31 @@ class LoginWithGoogle(APIView):
                           status=status.HTTP_400_BAD_REQUEST)
         
 
+from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
+from rest_framework_simplejwt.exceptions import TokenError
+
 class LogoutWithGoogle(APIView):
     permission_classes = [permissions.IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         try:
-            # Perform Django logout
-            logout(request)
-            
-            return Response({
-                "message": "Successfully logged out"
-            }, status=status.HTTP_200_OK)
-            
+            # Retrieve the token from the request header
+            token = request.auth
+
+            if token is None:
+                return Response({"error": "Token not found in the request"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Attempt to blacklist the token
+            try:
+                token.blacklist()  # Blacklist the token
+            except AttributeError:
+                # Handle cases where the token does not support blacklisting
+                return Response({"error": "This token cannot be blacklisted"}, status=status.HTTP_400_BAD_REQUEST)
+            except TokenError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
+
         except Exception as e:
-            return Response({
-                "error": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
