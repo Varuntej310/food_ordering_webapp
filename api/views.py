@@ -17,10 +17,10 @@ from rest_framework.views import APIView
 
 from cart.models import Cart, CartItem
 from home.models import Menu, Category
-from orders.models import Orders, OrderItem, Address
+from orders.models import Orders, OrderItem, PhoneNumber
 from .serializers import (
     MenuSerializer, CategorySerializer,
-    OrderSerializer, AddressSerializer, CartSerializer, CartItemSerializer, BulkCartItemSerializer
+    OrderSerializer, CartSerializer, CartItemSerializer, BulkCartItemSerializer, PhoneNumberUpdateSerializer
 )
 from .serializers import UserSerializer, LoginSerializer, SignupSerializer
 from rest_framework_simplejwt.tokens import AccessToken
@@ -98,27 +98,10 @@ class Checkout(generics.CreateAPIView):
                 quantity=cart_item.quantity
             )
 
-        cart_items.delete()  # Clear the cart after creating the order
+        cart_items.delete()  
 
         order_data = self.get_serializer(order).data
         return Response(order_data, status=status.HTTP_201_CREATED)
-
-
-class AddressList(generics.ListAPIView):
-    serializer_class = AddressSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Address.objects.filter(user=self.request.user)
-
-
-class CreateAddress(generics.CreateAPIView):
-    queryset = Address.objects.all()
-    serializer_class = AddressSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
 
 # User API View
@@ -305,49 +288,48 @@ class LoginWithGoogle(APIView):
                 return Response({'error': 'No credential provided'}, 
                               status=status.HTTP_400_BAD_REQUEST)
 
-            # Your Google OAuth2 client ID
             CLIENT_ID = os.environ.get('client_id')
             
-            # Verify the token
             id_info = id_token.verify_oauth2_token(
                 request.data['credential'], 
                 requests.Request(), 
                 CLIENT_ID
             )
 
-            # Get user email from verified token
             email = id_info['email']
             
-            # Check if email is verified by Google
             if not id_info.get('email_verified'):
                 return Response({'error': 'Email not verified by Google'}, 
                               status=status.HTTP_400_BAD_REQUEST)
 
-            # Get or create user
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
                 user = User.objects.create_user(
                     email=email,
                     name=id_info.get('name', ''),
-                    # Set a random password since they're using Google login
                     password=User.objects.make_random_password()
                 )
 
-            # Generate or get token
             token, _ = Token.objects.get_or_create(user=user)
             
-            # Login the user
             login(request, user)
+
+            phone_number = None
+            try:
+                phone_obj = PhoneNumber.objects.get(user=user)
+                phone_number = str(phone_obj.phone_number) if phone_obj.phone_number else None
+            except PhoneNumber.DoesNotExist:
+                pass
             
             return Response({
                 'token': token.key,
                 'email': email,
-                'name': user.name
+                'name': user.name,
+                'phone_number': phone_number
             })
 
         except ValueError:
-            # Invalid token
             return Response({'error': 'Invalid client_id'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -358,14 +340,12 @@ class LoginWithGoogle(APIView):
 
 class LogoutWithGoogle(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    authentication_classes = [TokenAuthentication]  # Changed from JWTAuthentication
+    authentication_classes = [TokenAuthentication]  
 
     def post(self, request):
         try:
-            # Revoke the user's token
             request.auth.delete()
             
-            # Perform Django logout
             logout(request)
             
             return Response({
@@ -376,3 +356,23 @@ class LogoutWithGoogle(APIView):
             return Response({
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class UpdatePhoneNumber(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PhoneNumberUpdateSerializer
+
+    def get_object(self):
+        phone_number, created = PhoneNumber.objects.get_or_create(user=self.request.user)
+        return phone_number
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response({
+            "message": "Phone number updated successfully",
+            "phone_number": serializer.data['phone_number']
+        })

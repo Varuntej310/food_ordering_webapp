@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from cart.models import Cart, CartItem
 from home.models import Menu, Category
-from orders.models import Orders, OrderItem, Address
+from orders.models import Orders, OrderItem, PhoneNumber
 
 User = get_user_model()
 
@@ -47,12 +47,6 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, obj):
         return obj.get_total_price()
-
-
-class AddressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Address
-        fields = ['id', 'address']
 
 
 # cart
@@ -134,3 +128,15 @@ class BulkCartItemSerializer(serializers.Serializer):
         cart = self.context['cart']
         menu_item = Menu.objects.get(id=validated_data['menu_item_id'])
         return CartItem.objects.create(cart=cart, menu_item=menu_item, quantity=validated_data['quantity'])
+
+
+class PhoneNumberUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhoneNumber
+        fields = ['phone_number']
+
+    def validate_phone_number(self, value):
+        # Check if phone number already exists for another user
+        if PhoneNumber.objects.exclude(user=self.context['request'].user).filter(phone_number=value).exists():
+            raise serializers.ValidationError("This phone number is already in use.")
+        return value

@@ -26,7 +26,7 @@ class Orders(models.Model):
     date = models.DateTimeField(default=timezone.now)
     time = models.TimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    address = models.ForeignKey('Address', on_delete=models.SET_NULL, null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
 
     def get_total_price(self):
         return sum(item.get_cost() for item in self.items.all())
@@ -43,11 +43,9 @@ class OrderItem(models.Model):
         return self.menu_item.price * self.quantity
     
 
-
-class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses')
-    address = models.TextField()
+class PhoneNumber(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='phone_numbers')
     phone_number = PhoneNumberField(null=True, blank=True, default=None)
 
     def __str__(self):
-        return f"{self.address}"
+        return f"{self.phone_number}"

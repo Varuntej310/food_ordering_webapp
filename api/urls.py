@@ -1,8 +1,7 @@
 from django.urls import path
 from .views import (
     MenuList, CategoryList, MenuSearch,
-    UserOrderList, Checkout,
-    AddressList, CreateAddress, UserList,
+    UserOrderList, Checkout, UserList,
     CartView, CartItemCreate, CartItemIncrementDecrement, CartItemDelete, BulkAddToCartView
 )
 from .views import (
@@ -15,8 +14,6 @@ urlpatterns = [
     path('search/', MenuSearch.as_view()),
     path('orders/', UserOrderList.as_view()),
     path('checkout/', Checkout.as_view()),
-    path('addresses/', AddressList.as_view()),
-    path('address/create/', CreateAddress.as_view()),
     path('users/', UserList.as_view()),  
     path('cart/', CartView.as_view()),
     path('cart/add/', CartItemCreate.as_view(), name='cart-item-create'),

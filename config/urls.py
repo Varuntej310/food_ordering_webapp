@@ -18,27 +18,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import SignupView
-from home.views import Index, remove_from_cart_from_home, search_menu, add_to_cart_from_search
-from orders.views import user_orders, add_address_in_order_create
-from cart.views import cart_view, add_to_cart, remove_from_cart, OrderCreateView, order_placed
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", Index.as_view(), name='home'),
     path("accounts/", include('django.contrib.auth.urls')),
-    path("accounts/signup/", SignupView.as_view(), name='signup'),
-    path("orders/", user_orders, name='user_orders'),
-    path('cart/add-to-cart/<int:item_id>/', add_to_cart, name='add_to_cart'),
-    path('cart/remove-from-cart/<int:cart_item_id>/', remove_from_cart, name='remove_from_cart'),
-    path('cart/remove-from-cart-from-home/<int:cart_item_id>/', remove_from_cart_from_home, name='remove_from_cart'),
-    path('cart/create-order/', OrderCreateView.as_view(), name='create_order'),
-    path('cart/order-placed/<int:pk>', order_placed, name='order_placed'),
-    path('cart/add-address/', add_address_in_order_create, name='add_address'),
-    path('cart/', cart_view, name='cart_view'),
-    path('search/', search_menu, name='search_menu'),
-    path('search/add-to-cart/<int:item_id>/', add_to_cart_from_search, name='add_to_cart_search'),
-
     path('api/', include('api.urls')),
 ] 
 
