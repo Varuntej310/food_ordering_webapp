@@ -172,3 +172,6 @@ AUTH_USER_MODEL = 'users.CustomUser'
 CORS_ORIGIN_WHITELIST = [
      'http://localhost:3000'
 ]
+
+TIME_ZONE = 'Asia/Kolkata'
+USE_TZ = True
