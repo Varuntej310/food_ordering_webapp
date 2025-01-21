@@ -5,7 +5,7 @@ from .views import (
     CartView, CartItemCreate, CartItemIncrementDecrement, CartItemDelete, BulkAddToCartView
 )
 from .views import (
-    UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView, LoginWithGoogle, LogoutWithGoogle
+    UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView, LoginWithGoogle, LogoutWithGoogle, UpdatePhoneNumber
 )
 
 urlpatterns = [
@@ -28,5 +28,6 @@ urlpatterns = [
     path('profile/', GetProfileView.as_view(), name='get-profile'),
     path('bestsellers/', BestsellerListView.as_view(), name='bestsellers'),
     path('cart/bulk-add/', BulkAddToCartView.as_view(), name='bulk-add-to-cart'),
+    path('update-phone/', UpdatePhoneNumber.as_view(), name='update-phone'),
 ]
 
