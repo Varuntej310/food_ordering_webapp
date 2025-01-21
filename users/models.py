@@ -38,7 +38,6 @@ class CustomUser(AbstractUser):
                  ('gaurang', 'Gaurang')]
     username = None
     email = models.EmailField(unique=True)
-    phone_number = PhoneNumberField(unique=True)
     name = models.CharField(max_length=100)
     hostel = models.CharField(max_length=20, choices=HOSTELS)
 
