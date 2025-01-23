@@ -29,7 +29,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from django.http import StreamingHttpResponse, HttpResponse
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 import json
 import time
@@ -385,42 +385,6 @@ class UpdatePhoneNumber(generics.UpdateAPIView):
 
 
 
-def order_status_stream(request, order_id):
-    # Token Authentication
-    token_key = request.GET.get('token')
-    if not token_key:
-        return HttpResponse("Unauthorized", status=401)
-    try:
-        token = Token.objects.get(key=token_key)
-        request.user = token.user
-    except Token.DoesNotExist:
-        return HttpResponse("Unauthorized", status=401)
-
-    # Retrieve the order
-    order = get_object_or_404(Orders, pk=order_id, user=request.user)
-
-    # Define the SSE event stream
-    def event_stream():
-        last_status = order.status
-        yield f"data: {json.dumps({'status': last_status})}\n\n"
-        while True:
-            try:
-                order.refresh_from_db()
-                if order.status != last_status:
-                    last_status = order.status
-                    yield f"data: {json.dumps({'status': last_status})}\n\n"
-                time.sleep(10)  # Adjust sleep time as needed
-            except GeneratorExit:
-                # GeneratorExit is raised when the client disconnects
-                print("Client disconnected: stopping event stream")
-                break
-            except Exception as e:
-                print(f"Error in stream: {e}")
-                break
-
-    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
-    response['Cache-Control'] = 'no-cache'  # Important for SSE
-    return response
 
 
 
