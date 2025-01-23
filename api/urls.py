@@ -5,7 +5,7 @@ from .views import (
     CartView, CartItemCreate, CartItemIncrementDecrement, CartItemDelete, BulkAddToCartView
 )
 from .views import (
-    UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView, LoginWithGoogle, LogoutWithGoogle, UpdatePhoneNumber
+    UserList, LoginView, SignupView, LogoutView, GetProfileView, BestsellerListView, LoginWithGoogle, LogoutWithGoogle, UpdatePhoneNumber, order_status_stream
 )
 
 urlpatterns = [
@@ -29,5 +29,6 @@ urlpatterns = [
     path('bestsellers/', BestsellerListView.as_view(), name='bestsellers'),
     path('cart/bulk-add/', BulkAddToCartView.as_view(), name='bulk-add-to-cart'),
     path('update-phone/', UpdatePhoneNumber.as_view(), name='update-phone'),
+    path('orders/<int:order_id>/status', order_status_stream, name='order_status_stream'),
 ]
 

@@ -29,6 +29,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
+from django.http import StreamingHttpResponse
+from django.shortcuts import get_object_or_404
+import json
+import time
+
 User = get_user_model()
 
 # Home API views
@@ -376,3 +381,30 @@ class UpdatePhoneNumber(generics.UpdateAPIView):
             "message": "Phone number updated successfully",
             "phone_number": serializer.data['phone_number']
         })
+
+
+
+
+def order_status_stream(request, order_id):
+    order = get_object_or_404(Orders, pk=order_id) # Assuming you have an Order model
+
+    def event_stream():
+        last_status = order.status  # Initial status
+        yield f"data: {json.dumps({'status': last_status})}\n\n" # Initial event
+
+        while True: # Keep connection open and send updates
+            order.refresh_from_db() # Refresh order from database to get latest status
+            if order.status != last_status:
+                last_status = order.status
+                yield f"data: {json.dumps({'status': last_status})}\n\n" # Send status update event
+            time.sleep(2) # Check for status change every 2 seconds (adjust as needed)
+
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache' # Important for SSE
+    return response
+
+
+
+
+
+
