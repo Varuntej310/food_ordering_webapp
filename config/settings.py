@@ -53,7 +53,15 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'rest_framework.authtoken',
     'knox',
+    'channels',
 ]
+
+ASGI_APPLICATION = 'Souruchi.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
