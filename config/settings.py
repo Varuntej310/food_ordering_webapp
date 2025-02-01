@@ -27,12 +27,15 @@ SECRET_KEY = "django-insecure-45x%=0vp+9#y*_y+rws)#bz$b(i&bp+q+7edsxbsfb2mifg_f=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'daphne',
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -53,14 +56,19 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'rest_framework.authtoken',
     'knox',
-    'channels',
 ]
 
+
+# WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = 'config.asgi.application'
+
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    }
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
 }
 
 MIDDLEWARE = [
@@ -94,7 +102,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database

@@ -7,10 +7,6 @@ from home.models import Menu
 from datetime import datetime
 import pytz
 
-from django.db.models.signals import post_save
-from asgiref.sync import async_to_sync
-from django.dispatch import receiver
-from channels.layers import get_channel_layer
 
 User = get_user_model()
 
@@ -94,17 +90,5 @@ class PhoneNumber(models.Model):
 
 
 
-@receiver(post_save, sender=Orders)
-def send_order_update(sender, instance, **kwargs):
-    if not kwargs.get('created'):  # Trigger only on updates, not creation
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'user_{instance.user.id}',
-            {
-                'type': 'order_update',
-                'data': {
-                    'order_id': instance.id,
-                    'status': instance.status,
-                }
-            }
-        )
+
+
