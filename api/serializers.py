@@ -29,12 +29,16 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     item_name = serializers.CharField(source='menu_item.item', read_only=True)
-    price = serializers.DecimalField(source='menu_item.price', max_digits=10, decimal_places=2, read_only=True)
+    item_price = serializers.DecimalField(source='menu_item.price', max_digits=10, decimal_places=2, read_only=True)
+    item_image = serializers.ImageField(source='menu_item.image', read_only=True)
+    category = serializers.SlugRelatedField(source='menu_item.category', many=True, slug_field='name', read_only=True)
+    veg_nonveg_egg = serializers.CharField(source='menu_item.veg_nonveg_egg', read_only=True)
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'menu_item', 'item_name', 'quantity', 'price']
+        fields = ['id', 'menu_item', 'item_name', 'quantity', 'item_price', 'item_image', 'category', 'veg_nonveg_egg']
         read_only_fields = ['id']
+
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
