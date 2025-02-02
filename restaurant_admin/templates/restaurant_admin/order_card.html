@@ -1,0 +1,39 @@
+<div class="order-card">
+    <div class="order-header">
+        <div>
+            <h3>Order #{{ order.id }} - {{ order.get_mode_of_eating_display }}</h3>
+            <span class="order-status status-{{ order.status }}">
+                {{ order.get_status_display }}
+            </span>
+            <div class="customer-info">
+                <p>{{ order.user.get_full_name }}</p>
+                <p>{{ order.user.email }}</p>
+                <p>{{ order.date|date:"d M Y, H:i" }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="order-items">
+        {% for item in order.items.all %}
+        <div class="order-item">
+            {{ item.quantity }}x {{ item.menu_item.item }} - ₹{{ item.get_cost }}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="order-total">
+        Total: ₹{{ order.get_total_price }}
+    </div>
+    {% if order.status in 'completed,delivered' %}
+        <div class="order-completed-time">
+            Completed on: {{ order.completed_at|date:"d M Y, H:i" }}
+        </div>
+    {% else %}
+        <form method="post" style="margin-top: 10px;">
+            {% csrf_token %}
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <input type="hidden" name="status" value="{{ order.get_next_status }}">
+            <button type="submit" class="next-status-btn status-{{ order.get_next_status }}">
+                Mark as {{ order.get_next_status_display }}
+            </button>
+        </form>
+    {% endif %}
+</div>
